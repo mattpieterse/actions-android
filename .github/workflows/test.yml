@@ -1,47 +1,43 @@
 name: CI Workflow
 
 # - About ----------------------------------------------------------------------
-# CI/CD GitHub Action to ensure that the application compiles successfully.
-#
-# The workflow will automate the compilation of the application using the debug
-# configuration to ensure that the remote contains a working copy of the source
-# code at all times. This prevents conflicts and blockers.
+# 
 # ------------------------------------------------------------------------------
+
 
 on:
   push:
-    branches:
-      - main
-      - staging
-      - 'topic/**'
-      - 'rollback/**'
-      - 'debug/**'
   pull_request:
-    branches:
-      - main 
-      - staging
-      - 'topic/**'
-      - 'rollback/**'
-      - 'debug/**'
+
+
+# ------------------------------------------------------------------------------
+
 
 jobs:
+
+  # Job
   checkout:
     name: Checkout
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
+
+      # Step
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
 
+  # Job
   validate:
     name: Validation
     needs: checkout
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
+
+      # Step
       - name: Branches
         shell: bash
         run: |
@@ -49,7 +45,7 @@ jobs:
 
           echo "🔍 Validating branch: $BRANCH_NAME"
           
-          if [[ "$BRANCH_NAME" =~ ^(main|staging|topic\/[a-z0-9-]+|rollback\/[a-z0-9-]+|debug\/[a-z0-9-]+)$ ]]; then
+          if [[ "$BRANCH_NAME" =~ ^(main|staging|topic|debug|tests|rollback\/[a-z0-9-]+)$ ]]; then
             echo "✅ Follows accepted conventions."
             exit 0
           else
@@ -60,22 +56,27 @@ jobs:
             echo "  - rollback/<lowercase-name> (letters, numbers, dashes)"
             echo "  - topic/<lowercase-name> (letters, numbers, dashes)   "
             echo "  - debug/<lowercase-name> (letters, numbers, dashes)   "
+            echo "  - tests/<lowercase-name> (letters, numbers, dashes)   "
             exit 1
           fi
 
 
+  # Job
   android-build-debug:
     name: Android  |  Assemble
-    if: ${{ always() }}
+    if: always()
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+
+      # Step
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # Step
       - name: Configure the Android Environment
         uses: ./.github/actions/setup-android
         with:
@@ -84,35 +85,41 @@ jobs:
           enable-secrets: 'true'
           enable-caching: 'true'
 
+      # Step
       - name: Assemble (Debug)
         shell: bash
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.console=plain
         run: |
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace --info
 
+      # Step
       - name: Upload
         if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
+          name: android-apk
+          retention-days: 21
           path: |
             app/build/outputs/apk/
-            app/build/outputs/bundle/
-          retention-days: 7
 
+
+  # Job
   android-tests-debug:
     name: Android  |  Unit Tests
-    if: ${{ always() }}
+    if: needs.validate.result == 'success'
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+
+      # Step
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # Step
       - name: Configure the Android Environment
         uses: ./.github/actions/setup-android
         with:
@@ -121,6 +128,7 @@ jobs:
           enable-secrets: 'true'
           enable-caching: 'true'
 
+      # Step
       - name: Unit Tests (Debug)
         shell: bash
         env:
@@ -128,12 +136,16 @@ jobs:
         run: |
           ./gradlew testDebugUnitTest --no-daemon --stacktrace --info
 
+      # Step
       - name: Upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          retention-days: 7
+          retention-days: 21
           path: |
             app/build/reports/tests/
             app/build/test-results/
+
+
+# ------------------------------------------------------------------------------
