@@ -31,8 +31,8 @@ runs:
   steps:
 
     # Step
-    - name: Checkout
-      uses: actions/checkout@v5
+    # - name: Checkout
+    #   uses: actions/checkout@v5
 
     # Step
     - name: Setup JDK-${{ inputs.java-version }}
