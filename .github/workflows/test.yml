@@ -65,7 +65,7 @@ jobs:
 
 
   android-build-debug:
-    name: Android | Assemble
+    name: Android  |  Assemble
     if: ${{ always() }}
     needs: validate
     runs-on: ubuntu-latest
@@ -91,8 +91,18 @@ jobs:
         run: |
           ./gradlew assembleDebug --no-daemon --stacktrace
 
+      - name: Upload
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: |
+            app/build/outputs/apk/
+            app/build/outputs/bundle/
+          retention-days: 7
+
   android-tests-debug:
-    name: Android | Unit Tests
+    name: Android  |  Unit Tests
     if: ${{ always() }}
     needs: validate
     runs-on: ubuntu-latest
