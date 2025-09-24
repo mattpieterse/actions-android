@@ -1,0 +1,74 @@
+name: 'Setup Android'
+description: 'Set up Android SDK and environment for GitHub Actions'
+
+# --->
+
+inputs:
+  java-distros:
+    description: ''
+    required: false
+    default: 'temurin'
+
+  java-version:
+    description: ''
+    required: false
+    default: '17'
+
+  enable-secrets:
+    description: ''
+    required: false
+    default: 'false'
+
+  enable-caching:
+    description: ''
+    required: false
+    default: 'true'
+
+# --->
+
+runs:
+  using: 'composite'
+  steps:
+    # Step
+    - name: Checkout
+      uses: actions/checkout@v5
+
+    # Step
+    - name: Setup JDK-${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.java-distros }}
+        java-version: ${{ inputs.java-version }}
+        cache: ${{ inputs.enable-caching == 'true' && 'gradle' || '' }}
+
+    # Step
+    - name: Setup Android SDK ()
+      uses: android-actions/setup-android@v3
+
+    # Step
+    - name: Gradle >> Cache Dependencies
+      if: ${{ inputs.enable-caching == 'true' }}
+      uses: actions/cache@v4
+      id: dependency-cache
+      with:
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts','**/gradle-wrapper.properties') }}
+        restore-keys: |
+          gradle-${{ runner.os }}-
+        path: |
+          ~/.gradle/wrapper/
+          ~/.gradle/build-cache-*
+          ~/.gradle/caches
+
+    # Step
+    - name: Gradle >> Grant Access
+      shell: bash
+      run: chmod +x ./gradlew
+
+    # Step
+    - name: Gradle >> Check Access
+      shell: bash
+      run: |
+        if [ ! -f "./gradlew" ]; then
+          echo "Gradlew is missing or inaccessible with the current permissions"
+          exit 1
+        fi
