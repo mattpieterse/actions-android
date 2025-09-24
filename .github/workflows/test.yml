@@ -65,7 +65,7 @@ jobs:
 
 
   android-build-debug:
-    name: Assemble
+    name: Android | Assemble
     if: ${{ always() }}
     needs: validate
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
           ./gradlew assembleDebug --no-daemon --stacktrace
 
   android-tests-debug:
-    name: Unit Tests
+    name: Android | Unit Tests
     if: ${{ always() }}
     needs: validate
     runs-on: ubuntu-latest
@@ -111,27 +111,19 @@ jobs:
           enable-secrets: 'true'
           enable-caching: 'true'
 
-      - name: Assemble (Debug)
+      - name: Unit Tests (Debug)
         shell: bash
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.console=plain
         run: |
           ./gradlew testDebugUnitTest --no-daemon --stacktrace --info
 
-      - name: Upload Test Results
+      - name: Upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-results
+          name: test-results
+          retention-days: 7
           path: |
             app/build/reports/tests/
             app/build/test-results/
-          retention-days: 30
-
-      - name: Publish Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report
-          path: app/build/reports/tests/testDebugUnitTest/
-          retention-days: 30
