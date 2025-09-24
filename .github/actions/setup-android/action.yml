@@ -31,10 +31,6 @@ runs:
   steps:
 
     # Step
-    # - name: Checkout
-    #   uses: actions/checkout@v5
-
-    # Step
     - name: Setup JDK-${{ inputs.java-version }}
       uses: actions/setup-java@v5
       with:
@@ -49,12 +45,15 @@ runs:
     # Step
     - name: Gradle >> Grant Access
       shell: bash
-      run: chmod +x ./gradlew
+      run: |
+        # Gradle >> Grant Access
+        chmod +x ./gradlew
 
     # Step
     - name: Gradle >> Check Access
       shell: bash
       run: |
+        # Gradle >> Check Access
         if [ ! -f "./gradlew" ]; then
           echo "Gradlew is missing or inaccessible with the current permissions"
           exit 1
