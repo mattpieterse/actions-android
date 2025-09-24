@@ -47,20 +47,6 @@ runs:
       uses: android-actions/setup-android@v3
 
     # Step
-    - name: Gradle >> Cache Dependencies
-      id: dependency-cache
-      if: ${{ inputs.enable-caching == 'true' }}
-      uses: actions/cache@v4
-      with:
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts','**/gradle-wrapper.properties') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
-        path: |
-          ~/.gradle/wrapper/
-          ~/.gradle/build-cache-*
-          ~/.gradle/caches
-
-    # Step
     - name: Gradle >> Grant Access
       shell: bash
       run: chmod +x ./gradlew
